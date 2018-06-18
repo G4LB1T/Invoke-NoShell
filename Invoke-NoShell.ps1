@@ -24,8 +24,8 @@ A or M - for auto or manual payload generation mode
 Text to be displayed in the doc for the unsuspecting victim
 
 .EXAMPLE 
-Create all 12 possible permutations with the lure text "open seasame" armed with the Powershell script 
-Invoke-NoShell.ps1 -M A -T "Open seasame" -P c:\MyPowershellz\payload.ps1
+Create all 12 possible permutations with the lure text "open sesame" armed with the Powershell script 
+Invoke-NoShell.ps1 -M A -T "Open sesame" -P c:\MyPowershellz\payload.ps1
 
 .EXAMPLE 
 Create a single document, manually select all the parameters
