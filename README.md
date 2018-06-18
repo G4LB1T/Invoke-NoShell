@@ -7,12 +7,12 @@ The tool was launched at BSdiesTLV 2018, you may find the presentation in this r
 
 ## Parameters
 Invoke-NoShell has 4 optional parameters:
-'''
+```
 -docPath [-D] Full path for the output file.
 -payloadPath [-P] Full path of a text file containing Powershell payload to embed
 -docGenerationMod [-M] A or M - for auto or manual payload generation mode
 -lureText [-T] Text to be displayed in the doc for the unsuspecting victim
-'''
+```
 
 ## Usage Example 
 Create all 12 possible permutations with the lure text "open seasame" armed with the Powershell script 
@@ -44,11 +44,11 @@ Pull requests are welcomed:
 + Removing redundant functions written to the macro and never executed
 
 ## References
-Credit for Word COM object basics:
+Credit for Word COM object basics:  
 https://learn-powershell.net/2014/12/31/beginning-with-powershell-and-word/
 
-HKCU execution policy bypass trick:
+HKCU execution policy bypass trick:  
 https://blog.netspi.com/15-ways-to-bypass-the-powershell-execution-policy/
 
-PowerShell ISE script loading documentation:
+PowerShell ISE script loading documentation:  
 https://docs.microsoft.com/en-us/powershell/scripting/core-powershell/ise/how-to-use-profiles-in-windows-powershell-ise
