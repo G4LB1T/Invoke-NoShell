@@ -15,9 +15,9 @@ Invoke-NoShell has 4 optional parameters:
 ```
 
 ## Usage Example 
-Create all 12 possible permutations with the lure text "open seasame" armed with the Powershell script 
+Create all 12 possible permutations with the lure text "open sesame" armed with the Powershell script 
 ```
-Invoke-NoShell.ps1 -M A -T "Open seasame" -P c:\MyPowershellz\payload.ps1
+Invoke-NoShell.ps1 -M A -T "Open sesame" -P c:\MyPowershellz\payload.ps1
 ```
 
 Create a single document, manually select all the parameters
