@@ -36,6 +36,7 @@ The script will set the following key in order to allow automatic interaction wi
 ```
 HKEY_CURRENT_USER\Software\Microsoft\Office\<OfficeVersion>\Word\Security\AccessVBOM
 ```
+The tool was tested with Windows 10 x64, Office 2016 and PowerShell 5.0 but should work on other setups as well.
 
 ## //TODO:
 Pull requests are welcomed:
