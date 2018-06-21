@@ -455,7 +455,7 @@ stream.WriteLine "" `r`n
             $line = $line.Replace("""", """""")
             $payloadInLines = $payloadInLines + "stream.WriteLine """ + $line + """`r`n"
         }
-
+        $global:payloadInLines = $payloadInLines
         # If we are here - there were no errors and we can break the loop
         break
     }
