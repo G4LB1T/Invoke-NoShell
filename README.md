@@ -43,7 +43,7 @@ Pull requests are welcomed:
 + One of the permutations is generated incorrectly at the moment, fixing it will require some refactoring.
 + Adding more features for generating the document, resulting in more permutations, for example - adding builtin obfuscation features.
 + Removing redundant functions written to the macro and never executed
-+ Alert on common VBA limits - lines longer than 1024 chars and non-ASCII chars.
++ <s>Alert on common VBA limits - lines longer than 1024 chars and non-ASCII chars.</s>
 
 ## References
 Credit for Word COM object basics:  
