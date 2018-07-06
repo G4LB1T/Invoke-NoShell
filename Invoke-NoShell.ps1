@@ -89,11 +89,10 @@ yMMMMd.yyys/-----/+---/:--sNMMMMMNs/---/+-----:oyyy+MMMMMh
 "@
 
 # Helpers for setting the reg key enabling interaction with Word
-Function Test-RegistryValue($regkey, $name) {
-    # Test if the registry value under key\name exists
+Function Test-RegistryValue($regkey, $name, $value) {
+    # Test if the registry value under key\name exists and equals to the designated value
     Try {
-        Get-ItemProperty -Path $regkey -Name $name  -ErrorAction SilentlyContinue
-        Return $true
+        Return ((Get-ItemProperty -Path $regkey -Name $name  -ErrorAction SilentlyContinue).$name -eq $value)
     }
     Catch {Return $false}
 }
@@ -107,21 +106,40 @@ Function Test-RegistryKey($regkey) {
     Catch {Return $false}
 }
 
-function SetVBOMRegVal () {
+Function IsVbomSet() {
+    If (Test-RegistryValue $path "AccessVBOM" 0x1) {return $true}
+    Else {Return $false}
+}
+
+function SetVBOMRegVal() {
     # Verify that the mandatory VBOM reg key is set
-    $officeVer = 11
-    While ($officeVer -lt 17) {
-        If (Test-RegistryKey ("HKCU:\HKEY_CURRENT_USER\Software\Microsoft\Office\" + $officeVer.ToString() + ".0\Word")) {
-            $path = "HKCU:\HKEY_CURRENT_USER\Software\Microsoft\Office\" + $officeVer.ToString() + ".0\Word\Security"
-            $regCmdPath = $path.Replace("HKCU:\", "")
-            If (-Not (Test-RegistryValue $path "AccessVBOM")) {
-                cmd.exe /c ("reg add " + $regCmdPath + " /f /v AccessVBOM /t REG_DWORD /d 0x1")
+    $officeVer = (New-Object -ComObject word.application).version
+    $path = "HKCU:\Software\Microsoft\Office\" + $officeVer.ToString() + "\Word\Security"
+    If (Test-RegistryKey  $path) {
+        If (-Not (IsVbomSet)) {
+            # reg add and PowerShell have different approach to registry paths, removing colons
+            $regCmdPath = $path.Replace("HKCU:\", "HKCU\")
+            cmd.exe /c ("reg add " + $regCmdPath + " /f /v AccessVBOM /t REG_DWORD /d 0x1")
+
+            # VBOM value verification
+            If (IsVbomSet) {
+                Write-Output "VBOM registry value was set successfully!"    
+                Return $true
             }
-            If (Test-RegistryValue $path "AccessVBOM") {Return $true}
-            Else {Return $false}
+            Else {
+                Write-Output "Something went wrong while setting the VBOM registry value, terminating..."
+                Exit
+            }
         }
-        $officeVer++
+        Else {
+            Write-Output "VBOM registry value is already set, proceeding"
+        }
     }
+    Else {
+        Write-Output "Something went wrong while testing the existance of VBOM registry key, terminating..."
+        Exit
+    }
+
 }
 
 # A class which represents a single WinWord-macro-infused document
