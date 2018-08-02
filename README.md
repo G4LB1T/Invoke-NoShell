@@ -3,7 +3,7 @@ Invoke-NoShell outputs a Mircosoft Office Word .doc file with an embedded macro.
 It allows the automation of multiple similar versions of files, allowing to test how slight differences will effect it.
 Currently, only Powershell payloads are supported.
 
-The tool was launched at BSdiesTLV 2018, you may find the presentation in this repository.
+The tool was launched at BSidesTLV 2018, you may find the presentation in this repository.
 
 ## Parameters
 Invoke-NoShell has 4 optional parameters:
