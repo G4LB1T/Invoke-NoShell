@@ -1,21 +1,21 @@
 # Invoke-NoShell
-Invoke-NoShell outputs a Mircosoft Office Word .doc file with an embedded macro.
+Invoke-NoShell outputs a Microsoft Office Word .doc file with an embedded macro.
 It allows the automation of multiple similar versions of files, allowing to test how slight differences will effect it.
-Currently, only Powershell payloads are supported.
+Currently, only PowerShell payloads are supported.
 
-The tool was launched at BSidesTLV 2018, you may find the presentation in this repository.
+The tool was launched at BSidesTLV 2018 and significantly improved for BSidesLV 2018, you may find the presentations from both cons in this repository.
 
 ## Parameters
 Invoke-NoShell has 4 optional parameters:
 ```
 -docPath [-D] Full path for the output file.
--payloadPath [-P] Full path of a text file containing Powershell payload to embed
+-payloadPath [-P] Full path of a text file containing PowerShell payload to embed
 -docGenerationMod [-M] A or M - for auto or manual payload generation mode
 -lureText [-T] Text to be displayed in the doc for the unsuspecting victim
 ```
 
 ## Usage Example 
-Create all 12 possible permutations with the lure text "open sesame" armed with the Powershell script 
+Create all 13 possible permutations with the lure text "open sesame" armed with the PowerShell script 
 ```
 Invoke-NoShell.ps1 -M A -T "Open sesame" -P c:\MyPowershellz\payload.ps1
 ```
@@ -30,7 +30,7 @@ Create all 12 possible permutations in the folder C:\MyDocsFolder
 Invoke-NoShell.ps1 -D C:\MyDocsFolder -M A
 ```
 
-## Prerequisits
+## Prerequisites
 You need to have Microsoft Office installed in order to run this script.
 The script will set the following key in order to allow automatic interaction with Word:
 ```
@@ -41,8 +41,10 @@ The tool was tested with Windows 10 x64, Office 2016 and PowerShell 5.0 but shou
 ## //TODO:
 Pull requests are welcomed:
 + One of the permutations is generated incorrectly at the moment, fixing it will require some refactoring.
-+ Adding more features for generating the document, resulting in more permutations, for example - adding builtin obfuscation features.
-+ Removing redundant functions written to the macro and never executed
++ Adding more features for generating the document, resulting in more permutations, for example - adding built-in obfuscation features.
++ Removing redundant functions written to the macro and never executed.
++ Improving the OLE logic for including restrictions on its execution as well.
++ Adding arguments for testing a specific "manual" payload from the command line.
 + <s>Alert on common VBA limits - lines longer than 1024 chars and non-ASCII chars.</s>
 
 ## References

