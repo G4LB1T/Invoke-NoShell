@@ -223,7 +223,7 @@ Class MacroDoc {
     stream.WriteLine "Stop-Process -processname PowerShell_ISE"
 "@
 
-    $batchLauncer = @"
+    $batchLauncher = @"
     Dim strCommand As String
     Dim WshShell As Object
     Dim ret As Integer
