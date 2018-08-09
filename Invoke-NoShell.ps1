@@ -252,7 +252,10 @@ write_bat
         }
     }
 
-
+    # Adapted from a snippet released by BVoris:
+    # https://github.com/bvoris/SettingContent-MS-File-Execution/blob/master/LoadPowershellDemo.SettingContent-MS
+    #Thanks Brad!
+    
     WriteSettingContentToDisk () {
         $rawPayload = [IO.File]::ReadAllText($global:payloadPath)
         $settingContentTemplate = @"
