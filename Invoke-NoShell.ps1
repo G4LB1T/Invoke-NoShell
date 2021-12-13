@@ -1,7 +1,7 @@
 <#
 
 .SYNOPSIS
-Creates a either a single custom doc with text, link and macro or multiple slightly different permutations of it.
+Creates either a single custom doc with text, link and macro or multiple slightly different permutations of it.
 
 .DESCRIPTION
 Invoke-NoShell outputs a Mircosoft Office Word .doc file with an embedded macro.
